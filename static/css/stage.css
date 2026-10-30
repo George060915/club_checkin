@@ -1,0 +1,35 @@
+/* ==========================================================================
+   stage.css —— 正常流式布局
+   --------------------------------------------------------------------------
+   原版是"按 X 轴等比缩放"的双盒布局：内容被 scale(k) 整体放大，
+   在宽屏上盒子/文字会大得离谱。现已改为普通文档流：
+     · 页面正常纵向滚动，导航 sticky 吸顶
+     · .wrap 用 max-width 居中（见 main.css），字号/间距走真实像素
+     · 窗口怎么变都不再 scale，响应式交给 main.css 的 @media 断点
+   --------------------------------------------------------------------------
+   这里只负责"解除"原来 stage.js 需要的绝对定位和 flex 撑满，
+   让 .mv-stage / .mv-frame 两个包裹层变得透明、不产生副作用。
+   （模板里保留了 .mv-stage > .mv-frame > .wrap 的结构，便于以后想恢复。）
+   ========================================================================== */
+
+body.mv-shell {
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.mv-stage {
+  display: block;
+}
+
+.mv-frame {
+  position: static;
+  width: auto;
+  height: auto;
+}
+
+.mv-frame > .wrap {
+  position: static;
+  width: auto;
+  transform: none;
+  margin: 0 auto;
+}

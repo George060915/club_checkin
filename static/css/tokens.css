@@ -1,0 +1,142 @@
+/* ==========================================================================
+   tokens.css —— 科成开源社 · 设计系统 Token（深蓝 / Deep Blue 主题）
+   --------------------------------------------------------------------------
+   全站唯一配色来源。改这里，所有页面同步生效。
+
+   视觉定调：深空蓝底 + 玻璃浮层 + 电光蓝微光。
+     底色是接近黑的蓝（#050912），不是纯黑，保留一点空气感；
+     所有面板都是半透明玻璃，靠 1px 内高光边勾出边缘；
+     唯一的强调色是电光蓝 #3f7dff，只出现在光晕、选中态、焦点环和细线上，
+     不用于大面积色块 —— 深色界面里，最亮的应该是内容，不是背景。
+   ========================================================================== */
+
+:root {
+  /* ---- 底色层次：由深到浅，模拟"页底 → 面板 → 浮层"的空间关系 ---- */
+  --mv-bg:            #050912;
+  --mv-bg-deep:       #03060d;
+  --mv-surface:       rgba(255, 255, 255, .042);
+  --mv-surface-2:     rgba(255, 255, 255, .072);
+  --mv-surface-solid: #0a1220;
+  --mv-img-bg:        #0a1322;
+
+  /* ---- 文字 ---- */
+  --mv-ink:         #e8eefb;
+  --mv-ink-hover:   #ffffff;
+  --mv-muted:       #9aabc4;
+  --mv-faint:       #6d7f99;
+  --mv-label:       #a6b6cd;
+
+  /* ---- 描边 ---- */
+  --mv-line:        rgba(255, 255, 255, .09);
+  --mv-line-soft:   rgba(255, 255, 255, .055);
+  --mv-input-line:  rgba(255, 255, 255, .13);
+  --mv-chip-line:   rgba(255, 255, 255, .14);
+
+  /* ---- 光：三束背景光斑，只用于背景层，不做前景色 ---- */
+  --mv-glow:        #3f7dff;
+  --mv-glow-2:      #7b5cff;
+  --mv-glow-3:      #22d3ee;
+  --mv-glow-soft:   rgba(63, 125, 255, .16);
+
+  /* ---- 强调（唯一前景强调色） ---- */
+  --mv-accent:      #8fb8ff;
+  --mv-accent-soft: rgba(63, 125, 255, .16);
+  --mv-accent-line: rgba(63, 125, 255, .45);
+
+  /* 功能色（深底上的标签） */
+  --mv-duty-bg:     rgba(214, 178, 94, .14);
+  --mv-duty-text:   #d8b96e;
+
+  /* Toast */
+  --mv-err-bg:      rgba(239, 68, 68, .13);
+  --mv-err-text:    #ffa8a8;
+  --mv-err-line:    rgba(239, 68, 68, .32);
+  --mv-ok-bg:       rgba(52, 211, 153, .12);
+  --mv-ok-text:     #6ee7b7;
+  --mv-ok-line:     rgba(52, 211, 153, .30);
+
+  /* ---- 阴影：带蓝调的黑，不是纯黑；都夹一条顶部内高光当"玻璃边缘" ---- */
+  --mv-shadow-1:          inset 0 1px 0 rgba(255, 255, 255, .055),
+                          0 18px 44px -26px rgba(0, 0, 0, .9);
+  --mv-shadow-2:          inset 0 1px 0 rgba(255, 255, 255, .07),
+                          0 30px 70px -30px rgba(0, 0, 0, .95);
+  --mv-shadow-card:       inset 0 1px 0 rgba(255, 255, 255, .06),
+                          0 16px 40px -24px rgba(0, 0, 0, .85);
+  --mv-shadow-panel:      inset 0 1px 0 rgba(255, 255, 255, .055),
+                          0 20px 48px -28px rgba(0, 0, 0, .88);
+  --mv-shadow-mobile:     inset 0 1px 0 rgba(255, 255, 255, .05),
+                          0 12px 30px -20px rgba(0, 0, 0, .8);
+  --mv-shadow-btn-hover:  0 14px 34px -14px rgba(63, 125, 255, .55);
+  --mv-shadow-ghost-hover: 0 12px 26px -16px rgba(0, 0, 0, .8);
+  /* 焦点环：键盘操作时必须看得见 */
+  --mv-focus-ring:        0 0 0 2px rgba(5, 9, 18, 1), 0 0 0 4px rgba(63, 125, 255, .75);
+
+  /* ---- 圆角 ---- */
+  --mv-r-sm: 4px;
+  --mv-r-md: 6px;
+  --mv-r-lg: 8px;
+  --mv-r-xl: 12px;
+  --mv-r-2xl: 14px;
+  --mv-r-3xl: 16px;
+  --mv-r-full: 9999px;
+  --mv-r-chip: 20px;
+
+  /* ---- 间距 ---- */
+  --mv-space-xs: 4px;
+  --mv-space-sm: 8px;
+  --mv-space-md: 16px;
+  --mv-space-lg: 20px;
+  --mv-space-xl: 24px;
+  --mv-space-2xl: 28px;
+  --mv-space-3xl: 32px;
+  --mv-space-4xl: 64px;
+
+  /* ---- 字号 ----（正常网页量级，不再被 stage.js 缩放）
+     之前内容会被等比放大，所以字号刻意写小；现在走真实像素，
+     统一上调到正常阅读范围：正文 15px、按钮 16px、大标题 22px。 */
+  --mv-text-xs: 12px;
+  --mv-text-sm: 13px;
+  --mv-text-base: 14px;
+  --mv-text-md: 14px;
+  --mv-text-lg: 15px;
+  --mv-text-xl: 16px;
+  --mv-text-2xl: 16px;
+  --mv-text-3xl: 18px;
+  --mv-text-4xl: 22px;
+  --mv-text-hero: clamp(44px, 9vw, 104px);
+
+  /* ---- 字重 ---- */
+  --mv-weight-normal: 400;
+  --mv-weight-medium: 500;
+  --mv-weight-semibold: 600;
+  --mv-weight-bold: 700;
+
+  /* ---- 字体 ----
+     展示字走衬线（Instrument Serif 优先，加载不到就落到宋体/思源宋体），
+     深蓝光晕上的衬线大标题是这版的主要记忆点；
+     正文走系统黑体，保证中文小字号清晰。 */
+  --mv-font-sans: "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
+  --mv-font-display: "Instrument Serif", "Songti SC", "Noto Serif SC", "SimSun", Georgia, serif;
+  --mv-font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+  /* ---- 动效 ---- */
+  --mv-ease: cubic-bezier(.4, 0, .2, 1);
+  --mv-ease-out: cubic-bezier(.23, 1, .32, 1);
+  --mv-t-fast: .15s;
+  --mv-t-mid: .25s;
+  --mv-t-slow: .4s;
+
+  /* ---- 尺寸 ---- */
+  --mv-nav-h: 64px;
+  --mv-input-h: 46px;
+  --mv-btn-h: 44px;
+  --mv-btn-sm-h: 34px;
+  --mv-avatar-sm: 34px;
+  --mv-avatar-lg: 60px;
+  --mv-content-max: 1080px;
+  /* 断点：媒体查询的宽度值不能用 var()，各 CSS 文件里写的是字面量，
+     改这里的数值时必须同步改 main.css / login.css 里的 @media。 */
+  --mv-breakpoint-mobile: 620px;
+  --mv-breakpoint-login: 480px;
+  --mv-breakpoint-login-desktop: 768px;
+}

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>科成开源社</title>
+<link rel="icon" type="image/png" href="{{ url_for('image_file', filename='logo.png') }}">
+<link rel="apple-touch-icon" href="{{ url_for('image_file', filename='logo.png') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/atmosphere.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+</head>
+<body class="mv-login" data-tab="{{ 'register' if active_tab == 'register' else 'login' }}">
+
+  <div class="mv-bg" aria-hidden="true"></div>
+
+  <main class="mv-hero">
+
+    <span class="mv-eyebrow" style="margin-top:16px">OPEN SOURCE CLUB</span>
+
+    <h1 class="mv-title">科成开源社</h1>
+
+    <p class="mv-sub">
+      输入学号与密码进入社团系统，完成活动签到、值班签到与记录查询。
+      管理员可发布活动与图文，普通成员可查看开源中心动态。
+    </p>
+
+    <div class="mv-tags">
+      <span>活动签到</span>
+      <span>值班记录</span>
+      <span>开源中心</span>
+    </div>
+
+    <div class="mv-cards">
+
+      <div class="mv-cardwrap">
+        <div class="card">
+          <h2>科成开源社</h2>
+
+          <div class="tabs">
+            <button class="tab on" id="tabLogin" type="button">登录</button>
+            <button class="tab" id="tabReg" type="button">注册</button>
+          </div>
+
+          {% if error %}
+          <div class="toast on">{{ error }}</div>
+          {% endif %}
+          {% if ok %}
+          <div class="toast ok on">{{ ok }}</div>
+          {% endif %}
+
+          <!-- 登录 -->
+          <form id="loginForm" class="on" method="post" action="/login">
+            <div class="field">
+              <label for="username">学号</label>
+              <input id="username" name="Id" placeholder="请输入学号" required>
+            </div>
+            <div class="field">
+              <label for="password">密码</label>
+              <input id="password" type="password" name="password" placeholder="请输入密码" required>
+            </div>
+            <button type="submit">登 录</button>
+          </form>
+
+          <!-- 注册 -->
+          <form id="regForm" method="post" action="/register">
+            <div class="field">
+              <label for="rsid">学号</label>
+              <input id="rsid" type="text" inputmode="numeric"
+                     pattern="\d{13}" maxlength="13" name="Id"
+                     placeholder="请输入13位学号" required>
+            </div>
+            <div class="field">
+              <label for="rusername">姓名</label>
+              <input id="rusername" type="text" placeholder="请输入姓名" name="username_1" required>
+            </div>
+            <div class="field">
+              <label for="rpwd">密码</label>
+              <input id="rpwd" name="password" type="password" minlength="6" placeholder="至少 6 位" required>
+            </div>
+            <button type="submit">注 册</button>
+          </form>
+        </div>
+      </div>
+
+    </div>
+
+    <p class="mv-foot">科成开源社 · 社团签到系统</p>
+
+  </main>
+
+<script src="{{ url_for('static', filename='js/login.js') }}"></script>
+</body>
+</html>

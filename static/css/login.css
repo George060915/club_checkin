@@ -1,0 +1,209 @@
+@import url("tokens.css");
+
+/* ==========================================================================
+   login.css —— 登录 / 注册卡片
+   --------------------------------------------------------------------------
+   深蓝主题下的"玻璃卡片"：半透明底 + 1px 内外高光边 + 大范围投影。
+   背景光晕由 atmosphere.css 提供，卡片自己只负责"浮在上面"。
+   ========================================================================== */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(16px, 5vw, 32px);
+  background: transparent;          /* 背景交给 atmosphere.css 的三层氛围 */
+  color: var(--mv-ink);
+  font: var(--mv-text-lg)/1.6 var(--mv-font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.card {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  padding: clamp(28px, 7vw, 40px) clamp(20px, 6vw, 32px) clamp(24px, 5vw, 32px);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .105), rgba(255, 255, 255, .035));
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: var(--mv-r-2xl);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .16),
+    0 40px 90px -40px rgba(0, 0, 0, .95),
+    /* 卡片外侧一圈蓝色环境光，让它"浮"在光晕上而不是贴在上面 */
+    0 0 90px -34px rgba(63, 125, 255, .6);
+  -webkit-backdrop-filter: blur(22px) saturate(130%);
+  backdrop-filter: blur(22px) saturate(130%);
+  /* 缓慢上下浮动，幅度 3px；聚焦时暂停，打字不会跟着晃 */
+  animation: mv-float 9s ease-in-out infinite;
+}
+
+/* 卡片顶部一道横向高光，制造"玻璃被光照到"的边缘感 */
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 18%;
+  right: 18%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(143, 184, 255, .75), transparent);
+  pointer-events: none;
+}
+
+.card:focus-within { animation-play-state: paused; }
+
+h2 {
+  margin-bottom: 20px;
+  font-size: 19px;
+  font-weight: var(--mv-weight-semibold);
+  text-align: center;
+  letter-spacing: .18em;
+  color: #d8e4ff;
+}
+
+/* 登录 / 注册 切换 */
+.tabs {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--mv-line);
+}
+.tab {
+  padding: 0 0 10px;
+  border: 0;
+  background: none;
+  font-size: var(--mv-text-2xl);
+  color: var(--mv-faint);
+  cursor: pointer;
+  transition:
+    color var(--mv-t-fast) var(--mv-ease),
+    box-shadow var(--mv-t-fast) var(--mv-ease);
+}
+.tab:hover { color: var(--mv-muted); }
+.tab.on {
+  color: var(--mv-ink);
+  font-weight: var(--mv-weight-semibold);
+  box-shadow: inset 0 -2px 0 var(--mv-accent);
+}
+.tab:focus-visible {
+  outline: none;
+  box-shadow: var(--mv-focus-ring);
+  border-radius: var(--mv-r-sm);
+}
+
+/* 提示条 */
+.toast {
+  display: none;
+  margin-bottom: var(--mv-space-lg);
+  padding: 10px 14px;
+  background: var(--mv-err-bg);
+  color: var(--mv-err-text);
+  border: 1px solid var(--mv-err-line);
+  border-radius: var(--mv-r-lg);
+  font-size: var(--mv-text-base);
+}
+.toast.on {
+  display: block;
+  animation: mv-toast-in var(--mv-t-mid) var(--mv-ease) both;
+}
+.toast.ok {
+  background: var(--mv-ok-bg);
+  color: var(--mv-ok-text);
+  border-color: var(--mv-ok-line);
+}
+@keyframes mv-toast-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* 表单 */
+form { display: none; }
+form.on { display: block; }
+
+.field { margin-bottom: var(--mv-space-lg); }
+.field label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: var(--mv-text-base);
+  letter-spacing: .04em;
+  color: var(--mv-label);
+}
+.field input {
+  width: 100%;
+  height: var(--mv-input-h);
+  padding: 0 12px;
+  border: 1px solid var(--mv-input-line);
+  border-radius: var(--mv-r-lg);
+  font: inherit;
+  font-size: 16px;
+  color: var(--mv-ink);
+  background: rgba(255, 255, 255, .04);
+  transition:
+    border-color var(--mv-t-fast) var(--mv-ease),
+    box-shadow var(--mv-t-fast) var(--mv-ease),
+    background-color var(--mv-t-fast) var(--mv-ease);
+}
+.field input::placeholder { color: var(--mv-faint); }
+.field input:hover { border-color: rgba(255, 255, 255, .22); }
+.field input:focus {
+  outline: none;
+  border-color: var(--mv-glow);
+  background: rgba(255, 255, 255, .06);
+  box-shadow: 0 0 0 3px rgba(63, 125, 255, .18);
+}
+
+/* 主按钮：冷白渐变 + 深蓝字。
+   深色界面里，最亮的那一块应该是"下一步要点的东西"。 */
+button[type="submit"] {
+  width: 100%;
+  height: 46px;
+  margin-top: 8px;
+  border: 0;
+  border-radius: var(--mv-r-lg);
+  background: linear-gradient(180deg, #ffffff 0%, #dce7ff 100%);
+  color: #08101f;
+  font-size: var(--mv-text-2xl);
+  font-weight: var(--mv-weight-semibold);
+  letter-spacing: .14em;
+  cursor: pointer;
+  box-shadow: 0 8px 22px -12px rgba(63, 125, 255, .7);
+  transition:
+    transform var(--mv-t-mid) var(--mv-ease),
+    box-shadow var(--mv-t-mid) var(--mv-ease),
+    filter var(--mv-t-fast) var(--mv-ease);
+}
+@media (hover: hover) and (pointer: fine) {
+  button[type="submit"]:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--mv-shadow-btn-hover);
+    filter: brightness(1.03);
+  }
+}
+button[type="submit"]:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 14px -10px rgba(63, 125, 255, .7);
+}
+button[type="submit"]:focus-visible {
+  outline: none;
+  box-shadow: var(--mv-focus-ring);
+}
+
+/* 手机端
+   注意：媒体查询的宽度不能用 var()（CSS 条件不支持自定义属性），必须写字面量，
+   与 tokens.css 的 --mv-breakpoint-login(480px) 保持一致。 */
+@media (max-width: 480px) {
+  .card {
+    max-width: none;
+    border-radius: var(--mv-r-xl);
+    box-shadow: var(--mv-shadow-mobile);
+  }
+  h2 { font-size: 20px; }
+}
+
+/* 桌面大屏（同上：媒体查询不能用 var()，字面量对应 --mv-breakpoint-login-desktop 768px） */
+@media (min-width: 768px) {
+  .card { border-radius: var(--mv-r-3xl); }
+}

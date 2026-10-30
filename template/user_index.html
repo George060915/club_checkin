@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ club_name or '科成开源社' }}</title>
+<link rel="icon" type="image/png" href="{{ url_for('image_file', filename='logo.png') }}">
+<link rel="apple-touch-icon" href="{{ url_for('image_file', filename='logo.png') }}">
+
+<!--
+  用户端首页模板。和管理员版 index.html 是同一套页面,
+  只是导航里没有"活动管理"和"账号管理"两个页签(内容也一并删了)。
+  后端传入的变量：
+    user     : { username 用户名, sid 学号, avatar 头像地址 }
+               avatar 可写完整路径（'/img/a.png'、'http...'）或 static 相对路径（'img/a.png'），空则显示名字首字
+    activity : { title, time, place }   没有活动时传 None
+    duty     : { status }               如「未签到 / 值班中 / 已签退」
+    records  : [ { type:'activity'|'duty', title, time }, ... ]
+    posts    : [ { title, date, summary, cover, link }, ... ]
+               cover 可写文件名（放 static 目录，如 'img/a.jpg'）或完整路径（如 '/img/a.jpg'），可空
+    error / ok : 提示文案（可选）
+    club_name  : 社团名（可选）
+
+  表单提交到以下地址，按需要改：
+    POST /checkin/activity   字段 code
+    POST /checkin/duty       字段 type = in / out
+    POST /change_password    字段 old_password / new_password / confirm
+-->
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/atmosphere.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/stage.css') }}">
+</head>
+
+<body class="mv-shell">
+
+{# 头像地址：以 / 或 http 开头当完整地址，否则当 static 里的相对路径；为空则用名字首字 #}
+{% if user.avatar %}
+  {% set av = user.avatar if user.avatar.startswith('/') or user.avatar.startswith('http') else url_for('static', filename=user.avatar) %}
+{% endif %}
+
+<!-- ===== 导航 ===== -->
+<header class="nav">
+  <span class="brand">{{ club_name or '科成开源社' }}</span>
+
+  <nav class="menu">
+    <button type="button" class="on" data-view="opensource">开源中心</button>
+    <button type="button" data-view="activity">活动签到</button>
+    <button type="button" data-view="duty">值班签到</button>
+    <button type="button" data-view="records">签到记录</button>
+    <button type="button" data-view="account">账户中心</button>
+  </nav>
+
+  <div class="user">
+    {% if av %}
+      <img class="avatar" src="{{ av }}" alt="{{ user.username }}">
+    {% else %}
+      <span class="avatar">{{ user.username[:1] }}</span>
+    {% endif %}
+    <span>{{ user.username }}</span>
+  </div>
+</header>
+
+<!-- 下盒：按 X 轴比例等比缩放；设计宽度取 --mv-content-max（内容列宽） -->
+<div class="mv-stage">
+  <div class="mv-frame">
+    <main class="wrap">
+
+  {% if error %}<div class="toast">{{ error }}</div>{% endif %}
+  {% if ok %}<div class="toast ok">{{ ok }}</div>{% endif %}
+
+  <!-- ===== 开源中心：首页 ===== -->
+  <section class="view on" id="view-opensource">
+    <!-- 欢迎横幅：社团名 + 问候 + 真实统计 -->
+    <div class="hero">
+      <div class="hero__main">
+        <span class="hero__eyebrow">{{ club_name or '科成开源社' }}</span>
+        <h2>欢迎回来，{{ user.username }}</h2>
+        <p>签到、记录、参与活动，一起见证开源的每一步。</p>
+      </div>
+      <div class="hero__stats">
+        <div class="stat"><b>{{ posts|length }}</b><span>图文记录</span></div>
+        <div class="stat"><b>{{ records|length }}</b><span>我的签到</span></div>
+      </div>
+    </div>
+
+    <!-- 快捷入口：点击切到对应页签 -->
+    <div class="quick">
+      <button type="button" class="quick__item" data-goto="activity">
+        <b>活动签到</b><span>输入现场签到码</span>
+      </button>
+      <button type="button" class="quick__item" data-goto="duty">
+        <b>值班签到</b><span>开始 / 结束值班</span>
+      </button>
+      <button type="button" class="quick__item" data-goto="records">
+        <b>签到记录</b><span>查看我的签到</span>
+      </button>
+      <button type="button" class="quick__item" data-goto="account">
+        <b>账户中心</b><span>资料与密码</span>
+      </button>
+    </div>
+
+    <div class="sec-head">
+      <h3>开源中心</h3>
+      <p class="tip">社团参与过的活动与项目现场</p>
+    </div>
+
+    <div class="posts">
+      {% for p in posts %}
+      <a class="post" href="{{ p.link or '#' }}">
+        {% if p.cover %}
+        {% set cover = p.cover if p.cover.startswith('/') or p.cover.startswith('http') else url_for('static', filename=p.cover) %}
+        <img src="{{ cover }}" alt="{{ p.title }}" loading="lazy">
+        {% else %}
+        <div class="post__ph" aria-hidden="true"></div>
+        {% endif %}
+        <div class="post__body">
+          <h5>{{ p.title }}</h5>
+          <time>{{ p.date }}</time>
+          {% if p.summary %}<p>{{ p.summary }}</p>{% endif %}
+        </div>
+      </a>
+      {% else %}
+      <div class="empty">
+        <span class="empty__icon" aria-hidden="true"></span>
+        <b>还没有发布图文</b>
+        <span>社团发布活动图文后，会展示在这里</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- ===== 活动签到 ===== -->
+  <section class="view" id="view-activity">
+    <div class="panel">
+      <h3>活动签到</h3>
+      <p class="tip">输入活动现场给出的签到码</p>
+      <form method="post" action="/checkin/activity">
+        <div class="field">
+          <label for="code">签到码</label>
+          <input id="code" name="code" type="text" placeholder="请输入签到码" required>
+        </div>
+        <button class="btn" type="submit">签 到</button>
+      </form>
+    </div>
+
+    {% if activity %}
+    <div class="panel">
+      <h4>当前活动</h4>
+      <div class="info">
+        <div><i>活动</i><span>{{ activity.title }}</span></div>
+        <div><i>时间</i><span>{{ activity.time }}</span></div>
+        <div><i>地点</i><span>{{ activity.place }}</span></div>
+      </div>
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- ===== 值班签到 ===== -->
+  <section class="view" id="view-duty">
+    <div class="panel">
+      <h3>值班签到</h3>
+      <p class="tip">值班开始和结束时各签一次</p>
+      <form method="post" action="/checkin/duty">
+        <div class="row">
+          <button class="btn" type="submit" name="check_in" value="in">签到（开始值班）</button>
+          <button class="btn ghost" type="submit" name="check_out" value="out">签退（结束值班）</button>
+        </div>
+      </form>
+      <p class="status">今日状态：{{ duty.status or '未签到' }}</p>
+    </div>
+  </section>
+
+  <!-- ===== 签到记录：活动 + 值班 ===== -->
+  <section class="view" id="view-records">
+    <div class="panel">
+      <h3>签到记录</h3>
+      <p class="tip">包含活动签到与值班签到</p>
+
+      <div class="chips">
+        <button type="button" class="on" data-type="all">全部</button>
+        <button type="button" data-type="activity">活动</button>
+        <button type="button" data-type="duty">值班</button>
+      </div>
+
+      <table>
+        <thead>
+          <tr><th>类型</th><th>内容</th><th>时间</th></tr>
+        </thead>
+        <tbody>
+          {% for r in records %}
+          <tr data-type="{{ r.type }}">
+            <td>
+              <span class="tag {{ 'a' if r.type == 'activity' else 'd' }}">
+                {{ '活动' if r.type == 'activity' else '值班' }}
+              </span>
+            </td>
+            <td>{{ r.title }}</td>
+            <td class="time">{{ r.time }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3" class="empty">暂无记录</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== 账户中心 ===== -->
+  <section class="view" id="view-account">
+    <div class="panel">
+      <h3>账户中心</h3>
+      <p class="tip">个人资料</p>
+      <div class="profile">
+        {% if av %}
+          <img class="avatar lg" src="{{ av }}" alt="{{ user.username }}">
+        {% else %}
+          <span class="avatar lg">{{ user.username[:1] }}</span>
+        {% endif %}
+        <div>
+          <b>{{ user.username }}</b>
+          <small>学号：{{ user.sid }}</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h4>修改密码</h4>
+      <form method="post" action="/change_password">
+        <div class="field">
+          <label for="old_password">原密码</label>
+          <input id="old_password" name="old_password" type="password" placeholder="请输入原密码" required>
+        </div>
+        <div class="field">
+          <label for="new_password">新密码</label>
+          <input id="new_password" name="new_password" type="password" minlength="6"
+                 placeholder="至少 6 位" required>
+        </div>
+        <div class="field">
+          <label for="confirm">确认新密码</label>
+          <input id="confirm" name="confirm" type="password" minlength="6"
+                 placeholder="请再次输入新密码" required>
+        </div>
+        <button class="btn" type="submit">保存修改</button>
+      </form>
+    </div>
+  </section>
+
+    </main>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/user_index.js') }}"></script>
+</body>
+</html>

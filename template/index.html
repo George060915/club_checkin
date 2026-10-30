@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ club_name or '科成开源社' }}</title>
+<link rel="icon" type="image/png" href="{{ url_for('image_file', filename='logo.png') }}">
+<link rel="apple-touch-icon" href="{{ url_for('image_file', filename='logo.png') }}">
+
+<!--
+  首页模板。后端传入的变量：
+    user     : { username 用户名, sid 学号, avatar 头像地址 }
+               avatar 可写完整路径（'/img/a.png'、'http...'）或 static 相对路径（'img/a.png'），空则显示名字首字
+    activity : { title, time, place }   没有活动时传 None
+    activities: [ { id, code, title, type, time }, ... ]   活动管理列表(全部活动)
+    duty     : { status }               如「未签到 / 值班中 / 已签退」
+    records  : [ { type:'activity'|'duty', title, time, username }, ... ]
+               管理员端每条都带 username(是谁签的),普通用户端没有这一项
+    posts    : [ { title, date, summary, cover, link }, ... ]
+               cover 可写文件名（放 static 目录，如 'img/a.jpg'）或完整路径（如 '/img/a.jpg'），可空
+    accounts : [ { sid, username, permission }, ... ]   账号管理列表（后端待接）
+    error / ok : 提示文案（可选）
+    club_name  : 社团名（可选）
+
+  表单提交到以下地址，按需要改：
+    POST /checkin/activity     字段 code
+    POST /checkin/duty         字段 type = in / out
+    POST /activity/add         字段 title / code / type / time
+    POST /activity/delete      字段 id(后端接口待补)
+    POST /change_password      字段 old_password / new_password / confirm
+    POST /account/add          字段 sid / username / password / permission(后端接口待补)
+    POST /account/permission   字段 sid / permission(后端接口待补)
+    POST /account/delete       字段 sid(后端接口待补)
+    POST /post/add             字段 title / summary / link / cover(文件上传,后端接口待补)
+    POST /post/delete          字段 id(后端接口待补)
+
+  账号管理页签用到的变量(后端接口补好后传入):
+    accounts : [ { sid, username, permission }, ... ]   全部账号列表
+-->
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/atmosphere.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/stage.css') }}">
+</head>
+
+<body class="mv-shell">
+
+{# 头像地址：以 / 或 http 开头当完整地址，否则当 static 里的相对路径；为空则用名字首字 #}
+{% if user.avatar %}
+  {% set av = user.avatar if user.avatar.startswith('/') or user.avatar.startswith('http') else url_for('static', filename=user.avatar) %}
+{% endif %}
+
+<!-- ===== 导航 ===== -->
+<header class="nav">
+  <span class="brand">{{ club_name or '科成开源社' }}</span>
+
+  <nav class="menu">
+    <button type="button" class="on" data-view="opensource">开源中心</button>
+    <button type="button" data-view="activity">活动签到</button>
+    <button type="button" data-view="duty">值班签到</button>
+    <button type="button" data-view="records">签到记录</button>
+    <button type="button" data-view="manage">活动管理</button>
+    <button type="button" data-view="posts">图文发布</button>
+    <button type="button" data-view="accounts">账号管理</button>
+    <button type="button" data-view="account">账户中心</button>
+  </nav>
+
+  <div class="user">
+    {% if av %}
+      <img class="avatar" src="{{ av }}" alt="{{ user.username }}">
+    {% else %}
+      <span class="avatar">{{ user.username[:1] }}</span>
+    {% endif %}
+    <span>{{ user.username }}</span>
+  </div>
+</header>
+
+<!-- 下盒：按 X 轴比例等比缩放；设计宽度取 --mv-content-max（内容列宽） -->
+<div class="mv-stage">
+  <div class="mv-frame">
+    <main class="wrap">
+
+  {% if error %}<div class="toast">{{ error }}</div>{% endif %}
+  {% if ok %}<div class="toast ok">{{ ok }}</div>{% endif %}
+
+  <!-- ===== 开源中心：首页 ===== -->
+  <section class="view on" id="view-opensource">
+    <!-- 欢迎横幅：社团名 + 问候 + 真实统计 -->
+    <div class="hero">
+      <div class="hero__main">
+        <span class="hero__eyebrow">{{ club_name or '科成开源社' }}</span>
+        <h2>欢迎回来，{{ user.username }}</h2>
+        <p>签到、记录、参与活动，一起见证开源的每一步。</p>
+      </div>
+      <div class="hero__stats">
+        <div class="stat"><b>{{ activities|length }}</b><span>已发布活动</span></div>
+        <div class="stat"><b>{{ posts|length }}</b><span>图文记录</span></div>
+        <div class="stat"><b>{{ records|length }}</b><span>签到记录</span></div>
+      </div>
+    </div>
+
+    <!-- 快捷入口：点击切到对应页签 -->
+    <div class="quick">
+      <button type="button" class="quick__item" data-goto="activity">
+        <b>活动签到</b><span>输入现场签到码</span>
+      </button>
+      <button type="button" class="quick__item" data-goto="duty">
+        <b>值班签到</b><span>开始 / 结束值班</span>
+      </button>
+      <button type="button" class="quick__item" data-goto="records">
+        <b>签到记录</b><span>查看最近签到</span>
+      </button>
+      <button type="button" class="quick__item" data-goto="posts">
+        <b>图文发布</b><span>发布活动图文</span>
+      </button>
+    </div>
+
+    <div class="sec-head">
+      <h3>开源中心</h3>
+      <p class="tip">社团参与过的活动与项目现场</p>
+    </div>
+
+    <div class="posts">
+      {% for p in posts %}
+      <a class="post" href="{{ p.link or '#' }}">
+        {% if p.cover %}
+        {% set cover = p.cover if p.cover.startswith('/') or p.cover.startswith('http') else url_for('static', filename=p.cover) %}
+        <img src="{{ cover }}" alt="{{ p.title }}" loading="lazy">
+        {% else %}
+        <div class="post__ph" aria-hidden="true"></div>
+        {% endif %}
+        <div class="post__body">
+          <h5>{{ p.title }}</h5>
+          <time>{{ p.date }}</time>
+          {% if p.summary %}<p>{{ p.summary }}</p>{% endif %}
+        </div>
+      </a>
+      {% else %}
+      <div class="empty">
+        <span class="empty__icon" aria-hidden="true"></span>
+        <b>还没有发布图文</b>
+        <span>去「图文发布」上传第一篇活动记录吧</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- ===== 活动签到 ===== -->
+  <section class="view" id="view-activity">
+    <div class="panel">
+      <h3>活动签到</h3>
+      <p class="tip">输入活动现场给出的签到码</p>
+      <form method="post" action="/checkin/activity">
+        <div class="field">
+          <label for="code">签到码</label>
+          <input id="code" name="code" type="text" placeholder="请输入签到码" required>
+        </div>
+        <button class="btn" type="submit">签 到</button>
+      </form>
+    </div>
+
+    {% if activity %}
+    <div class="panel">
+      <h4>当前活动</h4>
+      <div class="info">
+        <div><i>活动</i><span>{{ activity.title }}</span></div>
+        <div><i>时间</i><span>{{ activity.time }}</span></div>
+        <div><i>地点</i><span>{{ activity.place }}</span></div>
+      </div>
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- ===== 值班签到 ===== -->
+  <section class="view" id="view-duty">
+    <div class="panel">
+      <h3>值班签到</h3>
+      <p class="tip">值班开始和结束时各签一次</p>
+      <form method="post" action="/checkin/duty">
+        <div class="row">
+          <button class="btn" type="submit" name="check_in" value="in">签到（开始值班）</button>
+          <button class="btn ghost" type="submit" name="check_out" value="out">签退（结束值班）</button>
+        </div>
+      </form>
+      <p class="status">今日状态：{{ duty.status or '未签到' }}</p>
+    </div>
+  </section>
+
+  <!-- ===== 签到记录：所有人的活动 + 值班(管理员看全部成员,包括自己) ===== -->
+  <section class="view" id="view-records">
+    <div class="panel">
+      <h3>签到记录</h3>
+      <p class="tip">所有人的签到记录（活动 + 值班）</p>
+
+      <div class="chips">
+        <button type="button" class="on" data-type="all">全部</button>
+        <button type="button" data-type="activity">活动</button>
+        <button type="button" data-type="duty">值班</button>
+      </div>
+
+      <table>
+        <thead>
+          <tr><th>类型</th><th>用户名</th><th>内容</th><th>时间</th></tr>
+        </thead>
+        <tbody>
+          {% for r in records %}
+          <tr data-type="{{ r.type }}">
+            <td>
+              <span class="tag {{ 'a' if r.type == 'activity' else 'd' }}">
+                {{ '活动' if r.type == 'activity' else '值班' }}
+              </span>
+            </td>
+            <td>{{ r.username }}</td>
+            <td>{{ r.title }}</td>
+            <td class="time">{{ r.time }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="empty">暂无记录</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== 活动管理 ===== -->
+  <section class="view" id="view-manage">
+    <div class="panel">
+      <h3>活动管理</h3>
+      <p class="tip">发布活动、设置签到码</p>
+
+      <div class="row">
+        <button class="btn" type="button" id="add-activity-btn">新增活动</button>
+      </div>
+
+      <!-- 新增活动表单:默认隐藏,点"新增活动"展开,提交到 POST /activity/add -->
+      <form id="add-activity-form" method="post" action="/activity/add" style="display:none; margin-top:16px;">
+        <div class="field">
+          <label for="a_title">活动名称</label>
+          <input id="a_title" name="title" type="text" placeholder="如:社团开放日" required>
+        </div>
+        <div class="field">
+          <label for="a_code">签到码</label>
+          <input id="a_code" name="code" type="text" placeholder="活动现场出示的签到码" required>
+        </div>
+        <div class="field">
+          <label for="a_type">活动类型</label>
+          <select id="a_type" name="type" required>
+            <option value="">请选择活动类型</option>
+            <option value="社团内部">社团内部</option>
+            <option value="校外活动">校外活动</option>
+            <option value="聚餐">聚餐</option>
+            <option value="外出交流">外出交流</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="a_time">活动日期</label>
+          <input id="a_time" name="time" type="date" required>
+        </div>
+        <div class="row">
+          <button class="btn" type="submit">保存活动</button>
+          <button class="btn ghost" type="button" id="add-activity-cancel">取消</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="panel">
+      <h4>已发布活动</h4>
+      <table class="manage-table">
+        <thead>
+          <tr><th>活动名称</th><th>签到码</th><th>类型</th><th>日期</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for a in activities %}
+          <tr>
+            <td>{{ a.title }}</td>
+            <td>{{ a.code }}</td>
+            <td><span class="tag d">{{ a.type }}</span></td>
+            <td class="time">{{ a.time }}</td>
+            <td>
+              <!-- 删除表单:活动 id 藏在隐藏输入框里,点垃圾桶按钮时提交 -->
+              <form method="post" action="/activity/delete">
+                <input type="hidden" name="id" value="{{ a.id }}">
+                <button class="del-btn" type="button" data-word="活动" data-title="{{ a.title }}" title="删除这个活动">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    <path d="M10 11v6"/><path d="M14 11v6"/>
+                  </svg>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="empty">暂无活动</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== 图文发布 ===== -->
+  <section class="view" id="view-posts">
+    <div class="panel">
+      <h3>图文发布</h3>
+      <p class="tip">发布图文，展示在开源中心</p>
+
+      <div class="row">
+        <button class="btn" type="button" id="add-post-btn">发布图文</button>
+      </div>
+
+      <!-- 发布图文表单:默认隐藏,点"发布图文"展开,提交到 POST /post/add。
+           注意:表单里有文件上传,必须加 enctype="multipart/form-data" -->
+      <form id="add-post-form" method="post" action="/post/add" enctype="multipart/form-data"
+            style="display:none; margin-top:16px;">
+        <div class="field">
+          <label for="p_title">标题</label>
+          <input id="p_title" name="title" type="text" placeholder="图文的标题" required>
+        </div>
+        <div class="field">
+          <label for="p_summary">简介</label>
+          <textarea id="p_summary" name="summary" placeholder="一段介绍文字（可不填）"></textarea>
+        </div>
+        <div class="field">
+          <label for="p_cover">封面图</label>
+          <input id="p_cover" name="cover" type="file" accept="image/*">
+        </div>
+        <div class="field">
+          <label for="p_link">链接（可不填）</label>
+          <input id="p_link" name="link" type="text" placeholder="点卡片跳转的网址，如 https://...">
+        </div>
+        <div class="row">
+          <button class="btn" type="submit">保存发布</button>
+          <button class="btn ghost" type="button" id="add-post-cancel">取消</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="panel">
+      <h4>已发布图文</h4>
+      <table class="posts-table">
+        <thead>
+          <tr><th>标题</th><th>发布时间</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for p in posts %}
+          <tr>
+            <td>{{ p.title }}</td>
+            <td class="time">{{ p.date }}</td>
+            <td>
+              <!-- 删除表单:图文 id 藏在隐藏输入框里,点垃圾桶按钮时提交 -->
+              <form method="post" action="/post/delete">
+                <input type="hidden" name="id" value="{{ p.id }}">
+                <button class="del-btn" type="button" data-word="图文" data-title="{{ p.title }}" title="删除这篇图文">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    <path d="M10 11v6"/><path d="M14 11v6"/>
+                  </svg>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3" class="empty">暂无图文</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== 账号管理 =====
+       页面和表单已经写好,但后端接口还没做:
+         POST /account/add         添加账号(字段 sid / username / password / permission)
+         POST /account/permission  修改权限(字段 sid / permission)
+         POST /account/delete      删除账号(字段 sid)
+       等后端补好后,在 /index 里把 accounts 列表传进来,表格就会显示真实数据。
+       要限制"只有管理员能进这个页签"时,把导航里的"账号管理"按钮和这个
+       section 一起包进 {% if user.permission == 'admin' %} ... {% endif %} 即可。 -->
+  <section class="view" id="view-accounts">
+    <div class="panel">
+      <h3>账号管理</h3>
+      <p class="tip">添加账号、设置账号权限</p>
+
+      <div class="row">
+        <button class="btn" type="button" id="add-account-btn">新增账号</button>
+      </div>
+
+      <!-- 新增账号表单:默认隐藏,点"新增账号"展开,提交到 POST /account/add -->
+      <form id="add-account-form" method="post" action="/account/add" style="display:none; margin-top:16px;">
+        <div class="field">
+          <label for="u_sid">学号</label>
+          <input id="u_sid" name="sid" type="text" placeholder="新账号的学号" required>
+        </div>
+        <div class="field">
+          <label for="u_username">用户名</label>
+          <input id="u_username" name="username" type="text" placeholder="昵称 / 姓名" required>
+        </div>
+        <div class="field">
+          <label for="u_password">初始密码</label>
+          <input id="u_password" name="password" type="password" minlength="6" placeholder="至少 6 位" required>
+        </div>
+        <div class="field">
+          <label for="u_permission">权限</label>
+          <select id="u_permission" name="permission" required>
+            <option value="user" selected>普通成员</option>
+            <option value="admin">管理员</option>
+          </select>
+        </div>
+        <div class="row">
+          <button class="btn" type="submit">保存账号</button>
+          <button class="btn ghost" type="button" id="add-account-cancel">取消</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="panel">
+      <h4>账号列表</h4>
+      <table class="accounts-table">
+        <thead>
+          <tr><th>学号</th><th>用户名</th><th>权限</th><th>操作</th></tr>
+        </thead>
+        <tbody>
+          {% for u in accounts %}
+          <tr>
+            <td>{{ u.sid }}</td>
+            <td>{{ u.username }}</td>
+            <td>
+              <!-- 平时显示权限标签,点"修改权限"后标签藏起来、换成下面的表单 -->
+              <span class="tag perm-tag {{ 'a' if u.permission == 'admin' else 'd' }}">
+                {{ '管理员' if u.permission == 'admin' else '普通成员' }}
+              </span>
+              <!-- 权限表单:每行一个,默认隐藏,选好权限点"保存",提交到 POST /account/permission -->
+              <form class="perm-form" method="post" action="/account/permission" style="display:none">
+                <input type="hidden" name="sid" value="{{ u.sid }}">
+                <select name="permission">
+                  <option value="user" {% if u.permission == 'user' or not u.permission %}selected{% endif %}>普通成员</option>
+                  <option value="admin" {% if u.permission == 'admin' %}selected{% endif %}>管理员</option>
+                </select>
+                <button class="btn sm" type="submit">保存</button>
+              </form>
+            </td>
+            <td>
+              <!-- 修改权限按钮:点一下展开表单,再点一下收起(文字在 修改权限/取消 之间切换) -->
+              <button class="btn sm ghost perm-edit-btn" type="button">修改权限</button>
+              <!-- 删除表单:学号藏在隐藏输入框里,点垃圾桶按钮时提交。
+                   确认框不用自己写 JS,index.js 里已有 .del-btn 的通用逻辑:
+                   点垃圾桶 -> 弹「确定删除账号「xxx」吗?」-> 确认后才提交 -->
+              <form class="del-form" method="post" action="/account/delete">
+                <input type="hidden" name="sid" value="{{ u.sid }}">
+                <button class="del-btn" type="button" data-word="账号" data-title="{{ u.username }}" title="删除这个账号">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    <path d="M10 11v6"/><path d="M14 11v6"/>
+                  </svg>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="empty">暂无账号（等后端把 accounts 列表传进来就会显示）</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== 账户中心 ===== -->
+  <section class="view" id="view-account">
+    <div class="panel">
+      <h3>账户中心</h3>
+      <p class="tip">个人资料</p>
+      <div class="profile">
+        {% if av %}
+          <img class="avatar lg" src="{{ av }}" alt="{{ user.username }}">
+        {% else %}
+          <span class="avatar lg">{{ user.username[:1] }}</span>
+        {% endif %}
+        <div>
+          <b>{{ user.username }}</b>
+          <small>学号：{{ user.sid }}</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h4>修改密码</h4>
+      <form method="post" action="/change_password">
+        <div class="field">
+          <label for="old_password">原密码</label>
+          <input id="old_password" name="old_password" type="password" placeholder="请输入原密码" required>
+        </div>
+        <div class="field">
+          <label for="new_password">新密码</label>
+          <input id="new_password" name="new_password" type="password" minlength="6"
+                 placeholder="至少 6 位" required>
+        </div>
+        <div class="field">
+          <label for="confirm">确认新密码</label>
+          <input id="confirm" name="confirm" type="password" minlength="6"
+                 placeholder="请再次输入新密码" required>
+        </div>
+        <button class="btn" type="submit">保存修改</button>
+      </form>
+    </div>
+  </section>
+
+    </main>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/index.js') }}"></script>
+</body>
+</html>

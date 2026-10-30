@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python app.py)",
+      "Bash(curl -s -o /dev/null -w \"GET /login -> %{http_code}\\\\n\" http://127.0.0.1:5000/login)",
+      "Bash(curl -s -X POST http://127.0.0.1:5000/login -d \"username=admin&password=wrong\")",
+      "Bash(netstat -ano)",
+      "Bash(awk '{print $5}')",
+      "Bash(xargs -r -n1 taskkill //PID //F)",
+      "Bash(curl -s -o /tmp/resp.html -w \"GET /login -> %{http_code}\\\\n\" http://127.0.0.1:5000/login)",
+      "Bash(curl -s -o /dev/null -w \"POST admin/123456 -> %{http_code}\\\\n\" -X POST http://127.0.0.1:5000/login -d \"username=admin&password=123456\")",
+      "Bash(memorax-cli search *)",
+      "Bash(python *)",
+      "Bash(memorax-cli.cmd search *)"
+    ]
+  }
+}

@@ -1,0 +1,86 @@
+/* ==========================================================================
+   atmosphere.css —— 全站氛围层（光斑 / 网格 / 颗粒 / 呼吸）
+   --------------------------------------------------------------------------
+   三个页面（登录、管理员首页、用户首页）共用，只负责"空气"，不碰任何组件。
+
+   分三层叠出来：
+     html::before  静态大渐变，定住整体明暗走向（上方偏亮、下方沉下去）
+     body::before  三束缓慢漂移的光斑，做"动态光效"
+     body::after   64px 网格 + 颗粒噪点，压住大面积的平涂感
+
+   为什么用伪元素而不是多加一个 <div>：
+     不用改任何模板结构，三个页面加一行 <link> 就生效，也不会干扰
+     stage.js 对 .mv-frame 的缩放计算（fixed 定位不参与文档流）。
+
+   性能：动画只动 transform 与 opacity，且限制在 fixed 层；
+        所有动效都在 prefers-reduced-motion: reduce 下关闭。
+   ========================================================================== */
+
+html {
+  background: var(--mv-bg-deep);
+}
+
+/* ---- 第 1 层：静态大渐变 ---- */
+html::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(130% 92% at 50% -26%, #1b3080 0%, #0d1740 38%, #04081a 74%, #02040d 100%);
+}
+
+/* ---- 第 2 层：漂移光斑 ---- */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -14%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    /* 每束光都加一个中间停靠点，避免 radial-gradient 在末端出现可见的硬边 */
+    radial-gradient(46% 38% at 40% 12%, rgba(73, 130, 255, .40) 0%, rgba(73, 130, 255, .13) 42%, rgba(73, 130, 255, 0) 76%),
+    radial-gradient(36% 32% at 74% 26%, rgba(107, 76, 232, .24) 0%, rgba(107, 76, 232, .07) 46%, rgba(107, 76, 232, 0) 76%),
+    radial-gradient(32% 28% at 60% 84%, rgba(56, 189, 248, .11) 0%, rgba(56, 189, 248, 0) 74%);
+  filter: blur(6px);
+  animation: mv-aurora 28s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes mv-aurora {
+  0%, 100% { transform: translate3d(-2%, 0, 0) scale(1);    opacity: .85; }
+  33%      { transform: translate3d(3%, -2%, 0) scale(1.06); opacity: 1; }
+  66%      { transform: translate3d(-1%, 2%, 0) scale(1.03); opacity: .92; }
+}
+
+/* ---- 第 3 层：网格 + 颗粒 ---- */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, .016) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, .016) 1px, transparent 1px),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+  background-size: 64px 64px, 64px 64px, 140px 140px;
+  opacity: .42;
+  /* 上淡下隐：让网格只在视觉中心出现，边缘不显得像草稿纸 */
+  -webkit-mask-image: radial-gradient(110% 75% at 50% 22%, #000 0%, transparent 72%);
+  mask-image: radial-gradient(110% 75% at 50% 22%, #000 0%, transparent 72%);
+}
+
+/* ---- 慢浮动：给对内容卡片一个几乎察觉不到的上下呼吸 ----
+   幅度只有 3px、周期 9s，用来看"活着"而不是"在动"。
+   输入时暂停，避免打字时元素跟着飘。 */
+@keyframes mv-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before { animation: none; }
+  * { animation-duration: .001ms !important; animation-iteration-count: 1 !important; }
+}
